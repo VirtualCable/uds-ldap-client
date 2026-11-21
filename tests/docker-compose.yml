@@ -8,6 +8,11 @@ services:
       LDAP_ADMIN_PASSWORD: adminpassword
       LDAP_TLS: "true"
       LDAP_TLS_VERIFY_CLIENT: never
+      LDAP_DEBUG: "true"
     ports:
       - "1389:389"
       - "1636:636"
+    volumes:
+      - ./openldap/certs/ca.crt:/container/service/slapd/assets/certs/ca.crt
+      - ./openldap/certs/ldap.crt:/container/service/slapd/assets/certs/ldap.crt
+      - ./openldap/certs/ldap.key:/container/service/slapd/assets/certs/ldap.key

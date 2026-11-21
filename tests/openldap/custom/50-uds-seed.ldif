@@ -1,0 +1,29 @@
+# Test data for the OpenLDAP test server, applied by seed.sh (ldapadd).
+dn: ou=users,dc=uds,dc=example,dc=org
+objectClass: organizationalUnit
+ou: users
+
+dn: ou=groups,dc=uds,dc=example,dc=org
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=alice,ou=users,dc=uds,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: alice
+cn: Alice Example
+sn: Example
+mail: alice@example.org
+userPassword: alicepw
+
+dn: uid=bob,ou=users,dc=uds,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: bob
+cn: Bob Example
+sn: Example
+mail: bob@example.org
+userPassword: bobpw
+
+dn: cn=staff,ou=groups,dc=uds,dc=example,dc=org
+objectClass: groupOfNames
+cn: staff
+member: uid=alice,ou=users,dc=uds,dc=example,dc=org

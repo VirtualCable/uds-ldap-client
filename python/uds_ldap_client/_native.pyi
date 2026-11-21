@@ -44,7 +44,6 @@ class Connection:
         be provided together. ``min_tls_version`` is ``"1.2"`` (default)
         or ``"1.3"``. ``ciphers`` is an OpenSSL-style cipher list.
         """
-        ...
 
     def search(
         self,
@@ -62,7 +61,6 @@ class Connection:
         for binary attributes). ``scope`` is 0 (base), 1 (onelevel) or
         2 (subtree).
         """
-        ...
 
     def add(
         self,
@@ -70,9 +68,7 @@ class Connection:
         *,
         attributes: dict[str, list[str | bytes]],
     ) -> None: ...
-
     def delete(self, dn: str) -> None: ...
-
     def modify(
         self,
         dn: str,
@@ -83,6 +79,5 @@ class Connection:
         where ``op`` is ``"add"``, ``"delete"``, ``"replace"`` or
         ``"increment"``.
         """
-        ...
 
     def unbind(self) -> None: ...
