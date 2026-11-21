@@ -1,0 +1,8 @@
+{
+  "include": ["python"],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "strict",
+  // _native is a compiled PyO3 extension module; its types come from
+  // _native.pyi in this same directory, never from Python source.
+  "reportMissingModuleSource": false
+}

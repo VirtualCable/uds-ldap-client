@@ -1,0 +1,32 @@
+[build-system]
+requires = ["maturin>=1.16,<2"]
+build-backend = "maturin"
+
+[project]
+name = "uds-ldap-client"
+version = "0.1.0"
+description = "LDAP client library for UDS Enterprise, implemented in Rust with PyO3 bindings"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "Adolfo Gómez", email = "dkmaster@dkmon.com" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Directory Services",
+]
+
+# extension-module is enabled here (not in Cargo.toml) so that `cargo test`
+# links libpython and does not fail at link time.
+[tool.maturin]
+python-source = "python"
+module-name = "uds_ldap_client._native"
+features = ["pyo3/extension-module"]

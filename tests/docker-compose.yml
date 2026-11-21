@@ -1,0 +1,13 @@
+services:
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: uds-test-openldap
+    environment:
+      LDAP_ORGANISATION: UDS Test
+      LDAP_DOMAIN: uds.example.org
+      LDAP_ADMIN_PASSWORD: adminpassword
+      LDAP_TLS: "true"
+      LDAP_TLS_VERIFY_CLIENT: never
+    ports:
+      - "1389:389"
+      - "1636:636"
