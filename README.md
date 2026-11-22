@@ -6,7 +6,7 @@ bindings for Python.
 It replaces the `python-ldap3` dependency used by the UDS server for its LDAP
 operations, keeping the surface small and focused on what UDS actually needs:
 simple bind (with server result message passthrough), search (with referral
-control), add, delete (recursive) and modify, over `ldaps`/StartTLS with
+control), add, delete (recursive) and modify, over `ldaps` with
 explicit TLS version and cipher-suite configuration.
 
 ## Development
@@ -35,3 +35,4 @@ OpenLDAP server started with Docker Compose, see `tests/README.md`.
 ## License
 
 BSD-3-Clause, see `LICENSE`.
+

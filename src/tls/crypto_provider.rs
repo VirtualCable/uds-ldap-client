@@ -64,6 +64,13 @@ pub enum TlsConfigError {
     #[error("unsupported minimum TLS version {0:?} (rustls supports 1.2 and 1.3)")]
     UnsupportedVersion(String),
 
+    /// The list contains an OpenSSL cipher-list operator, which this
+    /// backend cannot honour (rustls takes a plain suite list).
+    #[error(
+        "OpenSSL cipher-list operator in {0:?} is not supported (configure individual suite names, e.g. ECDHE-RSA-AES128-GCM-SHA256)"
+    )]
+    CipherOperator(String),
+
     /// Could not build the certificate authority store.
     #[error("invalid CA certificate store: {0}")]
     RootStore(String),
@@ -110,6 +117,13 @@ pub fn provider(ciphers: Option<&str>) -> Result<CryptoProvider, TlsConfigError>
 
     let mut suites: Vec<SupportedCipherSuite> = Vec::new();
     for name in list.split(':') {
+        // OpenSSL list operators (`!exclude`, `+append`, `-remove`, `@strength`)
+        // would be silently misinterpreted as unknown suite names, which in
+        // the case of `!` inverts the requested semantics: an explicitly
+        // excluded suite would stay negotiable. Fail fast instead.
+        if name.starts_with(['!', '-', '+', '@']) {
+            return Err(TlsConfigError::CipherOperator(name.to_owned()));
+        }
         match openssl_to_rustls_cipher_suite(name) {
             Some(suite) => suites.push(suite),
             None => log::warn!("Skipping unknown cipher suite: {name}"),
@@ -153,6 +167,29 @@ mod tests {
             "ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512",
         ));
         assert!(matches!(result, Err(TlsConfigError::NoValidCiphers(_))));
+    }
+
+    #[test]
+    fn test_openssl_operators_are_rejected() {
+        for list in [
+            "!aNULL",
+            "HIGH:!aNULL:!MD5",
+            "-DHE-RSA",
+            "+AES256",
+            "@STRENGTH",
+        ] {
+            let result = provider(Some(list));
+            assert!(
+                matches!(result, Err(TlsConfigError::CipherOperator(_))),
+                "expected operator rejection for {list:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_dashes_inside_suite_names_are_not_operators() {
+        let result = provider(Some("ECDHE-RSA-AES128-GCM-SHA256")).expect("valid suite name");
+        assert_eq!(result.cipher_suites.len(), 1);
     }
 
     #[test]

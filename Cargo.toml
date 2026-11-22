@@ -1,6 +1,6 @@
 [package]
 name = "uds-ldap-client"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Adolfo Gómez <dkmaster@dkmon.com>"]
 description = "LDAP client library for UDS, implemented in Rust with PyO3 bindings"
@@ -11,7 +11,7 @@ name = "uds_ldap_client"
 crate-type = ["cdylib"]
 
 [dependencies]
-# abi3: one wheel covers every CPython >= 3.11.
+# abi3: one wheel covers every CPython >= 3.12.
 # extension-module is enabled from pyproject.toml (maturin) so that
 # `cargo test` links libpython normally and does not fail at link time.
 pyo3 = { version = "0.30", features = ["abi3-py312"] }

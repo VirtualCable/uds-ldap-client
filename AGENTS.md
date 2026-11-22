@@ -20,3 +20,10 @@ Rust + PyO3 extension providing the LDAP client used by the UDS server.
 - TLS cipher configuration follows the OpenSSL-name translation in
   `src/tls/crypto_provider.rs`: explicit lists must be honoured (fail-fast on
   zero valid suites); rustls defaults when unset.
+- **Security findings are internal**: reports, reproduction scripts and risk
+  acceptances (`strix_runs/known-risks.md` among them) live **outside the
+  public tree** — `strix_runs/` is git-ignored and stays local. Public
+  documentation must never describe how a defect can be triggered, only
+  ship the fixes and the defensive limits. If a public-facing note about a
+  risk is ever needed, it is written at management level and approved by
+  the maintainer first.
