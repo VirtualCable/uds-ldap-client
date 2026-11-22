@@ -1,6 +1,6 @@
 [package]
 name = "uds-ldap-client"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["Adolfo Gómez <dkmaster@dkmon.com>"]
 description = "LDAP client library for UDS, implemented in Rust with PyO3 bindings"

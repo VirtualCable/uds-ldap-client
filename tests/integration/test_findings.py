@@ -135,3 +135,17 @@ def test_connection_still_works_after_all_fixes(
     assert response["entries"][0]["dn"] == BASE
     assert response["referrals"] == []
     con.unbind()
+
+
+def test_size_limit_truncates_without_error(con: uds_ldap_client.Connection) -> None:
+    """Streaming search + server sizeLimitExceeded (rc=4): the entries
+    collected are returned and the rc is not surfaced, as python-ldap3
+    did. Also exercises the streaming path end to end."""
+    response = con.search(BASE, "(objectClass=inetOrgPerson)", scope=2, size_limit=1)
+    assert len(response["entries"]) == 1
+    assert response["entries"][0]["dn"].startswith("uid=")
+
+
+def test_unlimited_search_still_works(con: uds_ldap_client.Connection) -> None:
+    response = con.search(BASE, "(objectClass=inetOrgPerson)", scope=2, size_limit=0)
+    assert len(response["entries"]) == 2

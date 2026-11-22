@@ -32,7 +32,9 @@
 
 use std::{collections::HashSet, sync::Mutex, time::Duration};
 
-use ldap3::{LdapConn, LdapConnSettings, Mod, ResultEntry, Scope, SearchEntry, SearchOptions};
+use ldap3::{
+    LdapConn, LdapConnSettings, Mod, ResultEntry, Scope, SearchEntry, SearchOptions, parse_refs,
+};
 use pyo3::{
     exceptions::PyValueError,
     prelude::*,
@@ -51,6 +53,12 @@ const ALREADY_EXISTS_CODES: [u32; 2] = [20, 68];
 
 /// LDAP referral result code (RFC 4511 A.1).
 const REFERRAL_CODE: u32 = 10;
+
+/// LDAP sizeLimitExceeded result code (RFC 4511 A.1): the server answered
+/// with the entries collected up to its own limit. Like python-ldap3 did,
+/// the entries are returned and the error code is not surfaced (callers
+/// already bound the number of results they asked for).
+const SIZE_LIMIT_EXCEEDED_CODE: u32 = 4;
 
 /// Maximum allowed search filter nesting depth.
 ///
@@ -460,20 +468,58 @@ impl Connection {
         let (raw_entries, referrals): (Vec<RawEntry>, Vec<String>) = self
             .with_conn(py, |conn| {
                 conn.with_search_options(SearchOptions::new().sizelimit(size_limit));
-                let result = conn
-                    .search(base, scope, filter, attrs)
+                // Streaming search: entries are read one by one and the
+                // operation is abandoned once the client-side limit is
+                // reached, so the memory used is bounded by the limit
+                // regardless of how many entries the server keeps sending
+                // (the plain search materialised the whole set first).
+                let mut stream = conn
+                    .streaming_search(base, scope, filter, attrs)
                     .map_err(|e| OpError::Failed(e.to_string()))?;
-                // Take the entries and the result apart directly: on a
-                // referral answer (rc=10) the entries already received are
-                // preserved as partial results instead of being dropped.
-                let (entries, res) = (result.0, result.1);
-                if res.rc != 0 && !(res.rc == REFERRAL_CODE && !res.refs.is_empty()) {
+                let mut raw_entries: Vec<RawEntry> = Vec::new();
+                let mut refs: Vec<String> = Vec::new();
+                let mut truncated = false;
+                loop {
+                    match stream.next() {
+                        Ok(None) => break,
+                        Ok(Some(entry)) => {
+                            // Without adapters the raw stream yields referral
+                            // and intermediate items as well: collect the
+                            // referral URIs, skip the intermediates.
+                            if entry.is_ref() {
+                                refs.extend(parse_refs(entry.0));
+                                continue;
+                            }
+                            if entry.is_intermediate() {
+                                continue;
+                            }
+                            raw_entries.push(search_entry_to_raw(entry));
+                            if size_limit > 0 && raw_entries.len() as i32 >= size_limit {
+                                truncated = true;
+                                break;
+                            }
+                        }
+                        Err(e) => return Err(OpError::Failed(e.to_string())),
+                    }
+                }
+                let msgid = stream.last_id();
+                let res = stream.result();
+                if truncated {
+                    // Tell the server to stop the (possibly still flooding)
+                    // search. Best effort: the result is ignored either way.
+                    if let Err(e) = conn.abandon(msgid) {
+                        log::warn!("Abandon of the truncated search failed: {e}");
+                    }
+                    return Ok((raw_entries, refs));
+                }
+                if res.rc != 0
+                    && !((res.rc == REFERRAL_CODE && !res.refs.is_empty())
+                        || res.rc == SIZE_LIMIT_EXCEEDED_CODE)
+                {
                     return Err(OpError::Result(res.rc, res.text));
                 }
-                Ok((
-                    entries.into_iter().map(search_entry_to_raw).collect(),
-                    res.refs,
-                ))
+                refs.extend(res.refs);
+                Ok((raw_entries, refs))
             })
             .map_err(|e| e.into_pyerr("Search"))?;
 
