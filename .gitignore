@@ -6,3 +6,5 @@ __pycache__/
 .venv
 .vscode/
 tests/openldap/certs/
+/.review
+/strix_runs
